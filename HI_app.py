@@ -3,10 +3,12 @@ import sqlalchemy
 import datetime as dt
 from sqlalchemy.ext.automap import automap_base
 from sqlalchemy.orm import Session
+# from sqlalchemy.orm import scoped_session
+# from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine, func
 from flask import Flask, jsonify
 from datetime import datetime
-
+import time
 
 
 engine = create_engine("sqlite:///Resources/hawaii.sqlite")
@@ -19,6 +21,9 @@ Measurement = Base.classes.measurement
 Station = Base.classes.station
 
 session = Session(engine)
+# session = scoped_session(sessionmaker(bind=engine))
+# session_factory = sessionmaker(bind=engine)
+# Session = scoped_session(session_factory)
 
 app = Flask(__name__)
 
@@ -42,7 +47,10 @@ def home():
 
 def precip():
 
+    #precip_session= Session()
+    #session = Session(engine)
     last_date_query = session.query(Measurement.date).order_by(Measurement.id.desc()).limit(1)
+    #last_date_query = precip_session.query(Measurement.date).order_by(Measurement.id.desc()).limit(1)
 
     for item in last_date_query:
         last_date = dt.datetime.strptime(item.date, "%Y-%m-%d").date() - dt.timedelta(days=364)
@@ -57,14 +65,17 @@ def precip():
         date = day.date
         prcp = day.Average
         precip_dict[date] = prcp
-    
+    session.commit()
+
     return jsonify(precip_dict)
 
 @app.route("/api/v1.0/stations")
 
 def stations():
-
+    #session = Session(engine)
     station_names = session.query(Station.name).all()
+
+    session.commit()
 
     return jsonify(station_names)
 
@@ -84,6 +95,7 @@ def tobs():
     
     all_tobs = list(year_tobs)
 
+    session.commit()
     return jsonify(all_tobs)
  
 
@@ -97,6 +109,7 @@ def temps(start):
 
     temps_list = list(all_temps)
 
+    session.commit()
     return jsonify(temps_list)
 
 @app.route("/api/v1.0/<start>/<end>")
@@ -108,6 +121,7 @@ def temp_range(start,end):
 
     temp_range_list = list(temps_range)
 
+    session.commit()
     return jsonify(temp_range_list)
 
 if __name__ == '__main__':
